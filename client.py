@@ -8,60 +8,44 @@ load_dotenv()
 
 import asyncio
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAI
+
 import re
 
 def create_message_template():
     """Create a prompt template for concise Kubernetes status output"""
-    template = """You are a Kubernetes assistant. Given the user request, first try to list all the pods in the staging namespace. from there, try to find the name of that pod. if pod exist, list it. if not, say pod not found.
-
-User request: {user_input}
-
-Output:"""
+    template = (
+        "You are a Kubernetes assistant. Look for pods in the 'staging' namespace."
+        "Also, look for pod name, don't use label selector. "
+        "Use short answers, no follow-up questions, and no explanations.\n\n"
+        "User request: {user_input}\n\nOutput:"
+    )
     return PromptTemplate(
         template=template,
         input_variables=["user_input"]
     )
 
+def remove_followup_questions(text):
+    # Remove common follow-up question patterns
+    text = re.sub(r"(To assist further,|Could you please|This will allow me|please provide:|\b1\.|\b2\.).*", "", text, flags=re.IGNORECASE|re.DOTALL)
+    # Remove trailing whitespace and extra punctuation
+    return text.strip().rstrip('.')
+
 async def transform_user_message(user_input: str, model) -> str:
     """Transform user input using LangChain prompt template with fallback for common patterns"""
-    user_input_lower = user_input.lower().strip()
-    
-    # Quick pattern matching for common cases to avoid unnecessary LLM calls
-    if "staging namespace" in user_input_lower:
-        # Already has staging namespace context, return as is
-        return user_input
-    
-    # For service status queries, use the prompt template to get detailed instructions
-    if "service" in user_input_lower and "status" in user_input_lower:
-        prompt_template = create_message_template()
-        chain = prompt_template | model | StrOutputParser()
-        
-        try:
-            result = await chain.ainvoke({"user_input": user_input})
-            return result.strip()
-        except Exception as e:
-            print(f"Template transformation failed: {e}")
-            return f"{user_input} in staging namespace"
-    
-    # For simple service queries without status, add namespace context manually
-    # if "service" in user_input_lower:
-    #     return f"{user_input} in staging namespace"
-    
-    # For pod queries, add namespace context
-    if any(keyword in user_input_lower for keyword in ["pods", "pod status"]):
-        return f"{user_input} in staging namespace"
-    
-    # For other cases, use the prompt template
     prompt_template = create_message_template()
     chain = prompt_template | model | StrOutputParser()
-    
     try:
         result = await chain.ainvoke({"user_input": user_input})
-        return result.strip()
+        result = result.strip().replace("\n", " ")
+        result = remove_followup_questions(result)
+        return result
     except Exception as e:
-        # Fallback to original message if template fails
         print(f"Template transformation failed: {e}")
-        return f"{user_input} in staging namespace"
+        # Fallback: return the original user input, stripped and single line
+        return remove_followup_questions(user_input.strip().replace("\n", " "))
 
 def remove_think_blocks(text):
     # Remove <think>...</think> blocks (including multiline)
@@ -87,22 +71,34 @@ async def main():
 
     import os
     os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
+    os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 
     tools = await client.get_tools()
-    model=ChatGroq(
-        model="qwen-qwq-32b",
-    )   
+    # model=ChatGroq(
+    #     model="llama3-70b-8192",
+    # )   
+    model=ChatOpenAI(
+        model="gpt-4o-mini",
+    )
+    # model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
     
     # Original user input
-    user_input = "what is the status of bilingual service. is it running?"
+    # user_input = "what's the status of activity pods"
+    # user_input = "is the report service running?"
+    # user_input = "restart activity service pod"
+    user_input = "what is the pods logs for activity service"
     
     # Process the user input through the template to get detailed instructions
     detailed_message = await transform_user_message(user_input, model)
-    detailed_message = remove_think_blocks(detailed_message)
+    # Fallback if enhanced message is empty
+    if not detailed_message.strip():
+        print("Warning: Enhanced message was empty, falling back to user input.")
+        detailed_message = user_input.strip()
+    # detailed_message = remove_think_blocks(detailed_message)
     print(f"Original message: {user_input}")
-    # print(f"Enhanced message: {detailed_message}")
-    # print("-" * 50)
+    print(f"Enhanced message: {detailed_message}")
+    print("-" * 50)
     
     # Create a React agent using the client
     agent = create_react_agent(model, tools)
