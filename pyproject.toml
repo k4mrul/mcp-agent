@@ -10,4 +10,6 @@ dependencies = [
     "langchain-mcp-adapters>=0.1.7",
     "langchain-openai>=0.3.25",
     "langgraph>=0.4.8",
+    "streamlit>=1.46.1",
+    "watchdog>=6.0.0",
 ]

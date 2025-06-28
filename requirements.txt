@@ -3,3 +3,5 @@ langgraph
 langchain-groq
 langchain-google-genai
 langchain-openai
+streamlit
+watchdog

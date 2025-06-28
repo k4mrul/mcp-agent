@@ -13,13 +13,16 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAI
 
 import re
+import streamlit as st
 
 def create_message_template():
     """Create a prompt template for concise Kubernetes status output"""
     template = (
-        "You are a Kubernetes assistant. Look for pods in the 'staging' namespace."
-        "Also, look for pod name, don't use label selector. "
-        "Use short answers, no follow-up questions, and no explanations.\n\n"
+        "You are a Kubernetes assistant. Always use the 'staging' namespace."
+        "For pods, look for pod name, don't use label selector."
+        "When searching for a pod, if the user provides a service name, search for a deployment whose name starts with the requested text (e.g., 'activity-service'). Then, use the pods created by that deployment."
+        "Use short answers, no questions, and no explanations. Always proceed the work. Don't wait for user confirmation."
+        "If you find a similar deployment or pod, always proceed and explicitly say 'Yes, proceeding with <deployment or pod name>' without asking for user confirmation.\n\n"
         "User request: {user_input}\n\nOutput:"
     )
     return PromptTemplate(
@@ -51,64 +54,54 @@ def remove_think_blocks(text):
     # Remove <think>...</think> blocks (including multiline)
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
-async def main():
-    # Create a MultiServerMCPClient instance
-    client = MultiServerMCPClient(
-        {
-            "kubernetes": {
-                "command": "/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp",
-                "args": ["/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp"],
-                "transport": "stdio",
-                "env" :{
-                    "HOME": "/Users/abdulhannan",
-                    "GOOGLE_APPLICATION_CREDENTIALS": "/Users/abdulhannan/Downloads/dokan-dev-cef617497374.json",
-                    "GOOGLE_CLOUD_PROJECT": "dokan-dev",
-                    "GCP_SECRET_NAME": "dokan-dev-staging-secrets"
+def main():
+    st.title("Kubernetes Assistant")
+    st.write("Interact with your Kubernetes cluster using natural language.")
+
+    user_input = st.text_input("Enter your request:", "list all the service in staging namespace")
+    submit = st.button("Submit")
+
+    if submit and user_input.strip():
+        with st.spinner("Processing..."):
+            # Create a MultiServerMCPClient instance
+            client = MultiServerMCPClient(
+                {
+                    "kubernetes": {
+                        "command": "/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp",
+                        "args": ["/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp"],
+                        "transport": "stdio",
+                        "env" :{
+                            "HOME": "/Users/abdulhannan",
+                            "GOOGLE_APPLICATION_CREDENTIALS": "/Users/abdulhannan/Downloads/dokan-dev-cef617497374.json",
+                            "GOOGLE_CLOUD_PROJECT": "dokan-dev",
+                            "GCP_SECRET_NAME": "dokan-dev-staging-secrets"
+                        }
+                    },
                 }
-            }
-        }
-    )
+            )
 
-    import os
-    os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-    os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+            import os
+            os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
+            os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
+            async def process():
+                tools = await client.get_tools()
+                model=ChatOpenAI(
+                    model="gpt-4o-mini",
+                )
+                detailed_message = await transform_user_message(user_input, model)
+                if not detailed_message.strip():
+                    detailed_message = user_input.strip()
+                agent = create_react_agent(model, tools)
+                response = await agent.ainvoke({"messages": [("user", detailed_message)]})
+                output = response['messages'][-1].content
+                output = remove_think_blocks(output)
+                return output
 
-    tools = await client.get_tools()
-    # model=ChatGroq(
-    #     model="llama3-70b-8192",
-    # )   
-    model=ChatOpenAI(
-        model="gpt-4o-mini",
-    )
-    # model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
-    
-    # Original user input
-    # user_input = "what's the status of activity pods"
-    # user_input = "is the report service running?"
-    # user_input = "restart activity service pod"
-    user_input = "what is the pods logs for activity service"
-    
-    # Process the user input through the template to get detailed instructions
-    detailed_message = await transform_user_message(user_input, model)
-    # Fallback if enhanced message is empty
-    if not detailed_message.strip():
-        print("Warning: Enhanced message was empty, falling back to user input.")
-        detailed_message = user_input.strip()
-    # detailed_message = remove_think_blocks(detailed_message)
-    print(f"Original message: {user_input}")
-    print(f"Enhanced message: {detailed_message}")
-    print("-" * 50)
-    
-    # Create a React agent using the client
-    agent = create_react_agent(model, tools)
+            import asyncio
+            output = asyncio.run(process())
+            st.markdown("**Response:**")
+            st.markdown(output, unsafe_allow_html=True)
 
-    # Run the agent with the enhanced message
-    response = await agent.ainvoke({"messages": [("user", detailed_message)]})
-
-    output = response['messages'][-1].content
-    output = remove_think_blocks(output)
-    print(output)
-
-# Run the main function
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
