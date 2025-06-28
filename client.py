@@ -21,8 +21,8 @@ def create_message_template():
         "You are a Kubernetes assistant. Always use the 'staging' namespace."
         "For pods, look for pod name, don't use label selector."
         "When searching for a pod, if the user provides a service name, search for a deployment whose name starts with the requested text (e.g., 'activity-service'). Then, use the pods created by that deployment."
-        "Use short answers, no questions, and no explanations. Always proceed the work. Don't wait for user confirmation."
-        "If you find a similar deployment or pod, always proceed and explicitly say 'Yes, proceeding with <deployment or pod name>' without asking for user confirmation.\n\n"
+        "If you find a similar deployment or pod, always proceed and explicitly say 'Yes, proceeding with <deployment or pod name>' without asking for user confirmation."
+        "Use short answers, no questions, and no explanations\n\n"
         "User request: {user_input}\n\nOutput:"
     )
     return PromptTemplate(
