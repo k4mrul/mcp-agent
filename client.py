@@ -24,13 +24,19 @@ def create_message_template():
         "- View/show/get logs from pods/containers\n"
         "- Describe resources\n"
         "- Rollout deployments (restart, status, history)\n"
-        # "- Change environment variables\n"
-        # "- List GCP secrets\n"
-        "- List ingress paths\n\n"
-        # "For anything else, respond EXACTLY: 'I am not allowed to perform that action. I can only list resources, view logs, describe resources, manage rollouts, change environment variables, list GCP secrets, and list ingress paths.'\n\n"
+        "- List/find/extract/view ingress paths and related services\n"
+        "- Find services associated with ingress paths\n"
+        "- Query ingress configurations and their backend services\n\n"
+        "Examples of valid requests:\n"
+        "- 'list pods' -> 'list pods in staging'\n"
+        "- 'restart browser service' -> 'rollout restart deployment browser in staging'\n"
+        "- 'list services for ingress path /api/v1/' -> 'list ingress paths and services for /api/v1/'\n"
+        "- 'show logs for pod-name' -> 'get logs from pod-name in staging'\n\n"
+        "For anything else (like math, general questions, creating/deleting resources), respond EXACTLY: 'I am not allowed to perform that action.'\n\n"
         "Transform valid requests to direct commands:\n"
         "- Use pod names, not label selectors\n"
         "- For restarts, use rollout restart\n"
+        "- For ingress queries, include path information if provided\n"
         "- Be concise, no explanations\n\n"
         "User request: {user_input}\n\nDirect command:"
     )
@@ -101,15 +107,17 @@ def main():
                     model="gpt-4o-mini",
                 )
                 detailed_message = await transform_user_message(user_input, model)
+                print(f"Original input: {user_input}")
+                print(f"Transformed message: {detailed_message}")
                 if not detailed_message.strip():
                     detailed_message = user_input.strip()
                 
                 # Create system prompt for the agent
                 system_prompt = (
                     "You are a Kubernetes operations assistant. Execute the requested action using available tools. "
-                    "If the request is not supported by your tools, respond EXACTLY: "
-                    "'I am not allowed to perform that action.'" 
-                    # "'I can only list resources, view logs, describe resources, manage rollouts, change environment variables, list GCP secrets, and list ingress paths.' "
+                    "You can list resources, view logs, describe resources, manage rollouts, and list ingress paths with associated services. "
+                    "If the request is not supported by your tools (like math, general questions, creating/deleting resources), respond EXACTLY: "
+                    "'I am not allowed to perform that action.' "
                     "Do not ask questions. Do not offer suggestions. Just execute or reject."
                 )
                 
