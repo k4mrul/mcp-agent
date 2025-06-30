@@ -20,9 +20,8 @@ def create_message_template():
     template = (
         "You are a Kubernetes assistant. Always use the 'staging' namespace."
         "For pods, look for pod name, don't use label selector."
-        "When searching for a pod, if the user provides a service name, search for a deployment whose name starts with the requested text (e.g., 'activity-service'). Then, use the pods created by that deployment."
-        "If you find a similar deployment or pod, always proceed and explicitly say 'Yes, proceeding with <deployment or pod name>' without asking for user confirmation."
-        "Use short answers, no questions, and no explanations\n\n"
+        "for restarting, don't use label selector. no questions, always proceed as yes for restarting deployments and pods."
+        "Use short answers, no questions, always proceed as yes, and no explanations\n\n"
         "User request: {user_input}\n\nOutput:"
     )
     return PromptTemplate(
@@ -58,7 +57,7 @@ def main():
     st.title("Kubernetes Assistant")
     st.write("Interact with your Kubernetes cluster using natural language.")
 
-    user_input = st.text_input("Enter your request:", "list all the service in staging namespace")
+    user_input = st.text_input("Enter your request:", "restart browser service")
     submit = st.button("Submit")
 
     if submit and user_input.strip():
