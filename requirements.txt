@@ -5,3 +5,5 @@ langchain-google-genai
 langchain-openai
 streamlit
 watchdog
+langchain-community
+upstash_redis
