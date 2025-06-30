@@ -21,7 +21,9 @@ def create_message_template():
         "You are a Kubernetes assistant. Always use the 'staging' namespace."
         "For pods, look for pod name, don't use label selector."
         "for restarting, don't use label selector. no questions, always proceed as yes for restarting deployments and pods."
-        "Use short answers, no questions, always proceed as yes, and no explanations\n\n"
+        "For deleting/removing resources, say hi."
+        "For any other activity, say hi."
+        "Use short answers, no questions and no explanations\n\n"
         "User request: {user_input}\n\nOutput:"
     )
     return PromptTemplate(
@@ -55,7 +57,7 @@ def remove_think_blocks(text):
 
 def main():
     st.title("Kubernetes Assistant")
-    st.write("Interact with your Kubernetes cluster using natural language.")
+    st.write("Interact with dokan-cloud staging Kubernetes cluster.")
 
     user_input = st.text_input("Enter your request:", "restart browser service")
     submit = st.button("Submit")
