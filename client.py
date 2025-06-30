@@ -22,7 +22,6 @@ def create_message_template():
         "For pods, look for pod name, don't use label selector."
         "for restarting, don't use label selector. no questions, always proceed as yes for restarting deployments and pods."
         "For deleting/removing resources, say hi."
-        "For any other activity, say hi."
         "Use short answers, no questions and no explanations\n\n"
         "User request: {user_input}\n\nOutput:"
     )
