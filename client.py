@@ -44,7 +44,7 @@ def create_message_template():
         "- Check service/pod status (is X running?, what's the status of X?, is X down?)\n\n"
         "Examples of valid requests:\n"
         "- 'list pods' -> 'list pods in staging'\n"
-        "- 'restart browser service' -> 'rollout restart deployment browser in staging'\n"
+        "- 'restart browser service' -> 'rollout  browser service deployment in staging'\n"
         "- 'list services for ingress path /api/v1/' -> 'list ingress paths and services for /api/v1/'\n"
         "- 'show logs for pod-name' -> 'get logs from pod-name in staging'\n"
         "- 'is browser service running?' -> 'check status of browser service by listing pods in staging'\n"
@@ -55,7 +55,7 @@ def create_message_template():
         "For anything else (like math, general questions, creating/deleting resources), respond EXACTLY: 'I am not allowed to perform that action.'\n\n"
         "Transform valid requests to direct commands:\n"
         "- Use pod names, not label selectors\n"
-        "- For restarts, use rollout restart\n"
+        "- For restarts, list the deployment in staging namespace and use rollout \n"
         "- For ingress queries, include path information if provided\n"
         "- For status checks, convert to list and describe commands to check pod/deployment status\n"
         "- Be concise, no explanations\n\n"
@@ -96,8 +96,98 @@ def main():
     st.title("Kubernetes Assistant")
     st.write("Interact with dokan-cloud staging Kubernetes cluster.")
 
-    user_input = st.text_input("Enter your request:", "list deployment in staging namespace")
-    submit = st.button("Submit")
+    # Initialize session state for input field
+    if 'user_input' not in st.session_state:
+        st.session_state.user_input = "list all pods"
+
+    user_input = st.text_input("Enter your request:", value=st.session_state.user_input, key="input_field")
+    
+    # Add quick action buttons with black background and white text
+    st.markdown("""
+    <style>
+    .stButton > button {
+        background-color: #000000 !important;
+        color: white !important;
+        border: 1px solid #333333 !important;
+        border-radius: 8px !important;
+        margin: 0px !important;
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        height: 40px !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .stButton > button:hover {
+        background-color: #333333 !important;
+        color: white !important;
+    }
+    div[data-testid="column"] {
+        padding: 0px 4px !important;
+        margin-bottom: 8px !important;
+    }
+    /* Style for Submit button - make it different */
+    .stButton > button[kind="primary"] {
+        background-color: #007ACC !important;
+        color: white !important;
+        border: 1px solid #005a9e !important;
+        border-radius: 8px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        height: 45px !important;
+        margin-top: 10px !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background-color: #005a9e !important;
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.write("Quick actions:")
+    
+    # Create multiple rows of buttons for better spacing
+    # First row
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("list all services"):
+            st.session_state.user_input = "list all pods"
+            st.rerun()
+    
+    with col2:
+        if st.button("restart a service"):
+            st.session_state.user_input = "restart activity service"
+            st.rerun()
+    
+    with col3:
+        if st.button("check service status"):
+            st.session_state.user_input = "is activity service running?"
+            st.rerun()
+    
+    # Second row
+    col4, col5, col6 = st.columns(3)
+    
+    with col4:
+        if st.button("find service for specific path"):
+            st.session_state.user_input = "find the service associated with this ingress path /api/v1/integrations/webhook"
+            st.rerun()
+    
+    with col5:
+        if st.button("find none running service"):
+            st.session_state.user_input = "is there any service down?"
+            st.rerun()
+            
+    with col6:
+        if st.button("get service logs"):
+            st.session_state.user_input = "get logs from activity service"
+            st.rerun()
+
+    submit = st.button("Submit", type="primary")
 
     if submit and user_input.strip():
         with st.spinner("Processing..."):
