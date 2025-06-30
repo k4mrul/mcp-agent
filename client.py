@@ -18,12 +18,21 @@ import streamlit as st
 def create_message_template():
     """Create a prompt template for concise Kubernetes status output"""
     template = (
-        "You are a Kubernetes assistant. Always use the 'staging' namespace."
-        "For pods, look for pod name, don't use label selector."
-        "for restarting, don't use label selector. no questions, always proceed as yes for restarting deployments and pods."
-        "For deleting/removing resources, say hi."
-        "Use short answers, no questions and no explanations\n\n"
-        "User request: {user_input}\n\nOutput:"
+        "Transform this user request into a direct action command. Always use 'staging' namespace.\n"
+        "ONLY respond if the request is for:\n"
+        "- List resources (pods, deployments, services, etc.)\n"
+        "- View/show/get logs from pods/containers\n"
+        "- Describe resources\n"
+        "- Rollout deployments (restart, status, history)\n"
+        # "- Change environment variables\n"
+        # "- List GCP secrets\n"
+        "- List ingress paths\n\n"
+        # "For anything else, respond EXACTLY: 'I am not allowed to perform that action. I can only list resources, view logs, describe resources, manage rollouts, change environment variables, list GCP secrets, and list ingress paths.'\n\n"
+        "Transform valid requests to direct commands:\n"
+        "- Use pod names, not label selectors\n"
+        "- For restarts, use rollout restart\n"
+        "- Be concise, no explanations\n\n"
+        "User request: {user_input}\n\nDirect command:"
     )
     return PromptTemplate(
         template=template,
@@ -33,6 +42,8 @@ def create_message_template():
 def remove_followup_questions(text):
     # Remove common follow-up question patterns
     text = re.sub(r"(To assist further,|Could you please|This will allow me|please provide:|\b1\.|\b2\.).*", "", text, flags=re.IGNORECASE|re.DOTALL)
+    # Remove conversational patterns
+    text = re.sub(r"(Got it!|How can I assist you|Would you like to|Please specify what you need|Let me know how|What would you like me to).*", "", text, flags=re.IGNORECASE|re.DOTALL)
     # Remove trailing whitespace and extra punctuation
     return text.strip().rstrip('.')
 
@@ -92,10 +103,25 @@ def main():
                 detailed_message = await transform_user_message(user_input, model)
                 if not detailed_message.strip():
                     detailed_message = user_input.strip()
+                
+                # Create system prompt for the agent
+                system_prompt = (
+                    "You are a Kubernetes operations assistant. Execute the requested action using available tools. "
+                    "If the request is not supported by your tools, respond EXACTLY: "
+                    "'I am not allowed to perform that action.'" 
+                    # "'I can only list resources, view logs, describe resources, manage rollouts, change environment variables, list GCP secrets, and list ingress paths.' "
+                    "Do not ask questions. Do not offer suggestions. Just execute or reject."
+                )
+                
                 agent = create_react_agent(model, tools)
-                response = await agent.ainvoke({"messages": [("user", detailed_message)]})
+                messages = [
+                    ("system", system_prompt),
+                    ("user", detailed_message)
+                ]
+                response = await agent.ainvoke({"messages": messages})
                 output = response['messages'][-1].content
                 output = remove_think_blocks(output)
+                output = remove_followup_questions(output)
                 return output
 
             import asyncio
