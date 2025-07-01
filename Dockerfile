@@ -9,7 +9,8 @@ RUN pip3 install --no-cache-dir --upgrade \
 
 RUN apt-get update && apt-get install -y \
     build-essential \
-    software-properties-common
+    software-properties-common \
+    vim
 
 USER appuser
 WORKDIR /home/appuser
