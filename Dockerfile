@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
+# Copy kubeconfig
+RUN mkdir -p /root/.kube
+COPY config /root/.kube/config
 
 RUN pip3 install -r requirements.txt
 
