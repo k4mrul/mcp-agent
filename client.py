@@ -93,6 +93,11 @@ def remove_think_blocks(text):
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 def main():
+    st.set_page_config(
+        page_title="Dokan Cloud K8s Dashboard",
+        page_icon="⚙️",
+        layout="wide"
+    )
     st.title("Kubernetes Assistant")
     st.write("Interact with dokan-cloud staging Kubernetes cluster.")
 
@@ -161,7 +166,7 @@ def main():
     
     with col2:
         if st.button("restart a service"):
-            st.session_state.user_input = "restart activity service"
+            st.session_state.user_input = "restart activity service app"
             st.rerun()
     
     with col3:
