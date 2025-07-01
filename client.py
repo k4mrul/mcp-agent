@@ -191,12 +191,15 @@ def main():
 
     if submit and user_input.strip():
         with st.spinner("Processing..."):
+            # Get the Kubernetes MCP path from environment variable with fallback
+            kubernetes_mcp_path = os.getenv("KUBERNETES_MCP_PATH", "/home/appuser/app/kubernetes-mcp-amd64")
+            
             # Create a MultiServerMCPClient instance
             client = MultiServerMCPClient(
                 {
                     "kubernetes": {
-                        "command": "./kubernetes-mcp",
-                        "args": ["./kubernetes-mcp"],
+                        "command": kubernetes_mcp_path,
+                        "args": [kubernetes_mcp_path],
                         "transport": "stdio",
                         "env" :{
                             "HOME": "/Users/abdulhannan",
