@@ -183,7 +183,7 @@ def main():
             st.rerun()
             
     with col6:
-        if st.button("get service logs"):
+        if st.button("get a service logs"):
             st.session_state.user_input = "get logs from activity service"
             st.rerun()
 
@@ -195,8 +195,8 @@ def main():
             client = MultiServerMCPClient(
                 {
                     "kubernetes": {
-                        "command": "/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp",
-                        "args": ["/Users/abdulhannan/Desktop/ai/mcp/kubernetes-mcp/kubernetes-mcp"],
+                        "command": "./kubernetes-mcp",
+                        "args": ["./kubernetes-mcp"],
                         "transport": "stdio",
                         "env" :{
                             "HOME": "/Users/abdulhannan",

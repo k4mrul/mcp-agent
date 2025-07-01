@@ -7,3 +7,4 @@ streamlit
 watchdog
 langchain-community
 upstash_redis
+# langchain-ollama
