@@ -202,7 +202,6 @@ def main():
                         "args": [kubernetes_mcp_path],
                         "transport": "stdio",
                         "env" :{
-                            "HOME": "/Users/abdulhannan",
                             "GOOGLE_APPLICATION_CREDENTIALS": "/Users/abdulhannan/Downloads/dokan-dev-cef617497374.json",
                             "GOOGLE_CLOUD_PROJECT": "dokan-dev",
                             "GCP_SECRET_NAME": "dokan-dev-staging-secrets"
