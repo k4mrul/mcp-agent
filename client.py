@@ -100,7 +100,7 @@ def main():
     if 'user_input' not in st.session_state:
         st.session_state.user_input = "list all pods"
 
-    user_input = st.text_input("Enter your request:", value=st.session_state.user_input, key="input_field")
+    user_input = st.text_input("Enter your query:", value=st.session_state.user_input, key="input_field")
     
     # Add quick action buttons with black background and white text
     st.markdown("""
@@ -166,19 +166,19 @@ def main():
     
     with col3:
         if st.button("check service status"):
-            st.session_state.user_input = "is activity service running?"
+            st.session_state.user_input = "is user service up?"
             st.rerun()
     
     # Second row
     col4, col5, col6 = st.columns(3)
     
     with col4:
-        if st.button("find service for specific path"):
-            st.session_state.user_input = "find the service associated with this ingress path /api/v1/integrations/webhook"
+        if st.button("find service for ingress path"):
+            st.session_state.user_input = "find the service associated with this ingress path /api/v1/manifest.json"
             st.rerun()
     
     with col5:
-        if st.button("find none running service"):
+        if st.button("find stopped services"):
             st.session_state.user_input = "is there any service down?"
             st.rerun()
             
