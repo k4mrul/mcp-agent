@@ -9,9 +9,7 @@ RUN pip3 install --no-cache-dir --upgrade \
 
 RUN apt-get update && apt-get install -y \
     build-essential \
-    software-properties-common \
-    git \
-    vim
+    software-properties-common
 
 USER appuser
 WORKDIR /home/appuser
@@ -25,4 +23,4 @@ RUN . ${VIRTUAL_ENV}/bin/activate && pip install -r app/requirements.txt
 EXPOSE 8501
 
 COPY run.sh /home/appuser
-ENTRYPOINT ["./run.sh"]
+ENTRYPOINT ["bash", "./run.sh"]
