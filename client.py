@@ -47,7 +47,7 @@ def create_message_template():
         "- 'restart browser service' -> 'rollout  browser service deployment in staging'\n"
         "- 'list services for ingress path /api/v1/' -> 'list ingress paths and services for /api/v1/'\n"
         "- 'show logs for pod-name' -> 'get logs from pod-name in staging'\n"
-        "- 'is browser service running?' -> 'check status of browser service by listing pods in staging'\n"
+        "- 'is browser service running?' -> 'list pods, check status (running or not) of browser service'\n"
         "- 'is there any service down?' -> 'list all pods in staging with status & summarize'\n"
         "- 'what's the status of api service?' -> 'check status of api service by listing pods  in staging'\n"
         "- 'is payment pod running?' -> 'check status of payment pods by listing pods in staging'\n\n"
@@ -171,7 +171,7 @@ def main():
     
     with col3:
         if st.button("check service status"):
-            st.session_state.user_input = "is user service up?"
+            st.session_state.user_input = "is user service app running?"
             st.rerun()
     
     # Second row
